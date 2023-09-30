@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  StateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: sample-sfn
+      Role:
+        Fn::GetAtt:
+        - IamRole
+        - Arn
+      DefinitionUri: ../../src/app/statemachine/asl.yaml
+      DefinitionSubstitutions:
+        FunctionArn:
+          Fn::Sub:
+          - ${Function}:live
+          - Function:
+              Fn::GetAtt:
+              - LambdaFunction
+              - Arn
+  IamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+      - arn:aws:iam::aws:policy/CloudWatchEventsFullAccess
+      - arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess
+      - arn:aws:iam::aws:policy/AWSLambda_FullAccess
+  LambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: LambdaFunction
+      Handler: lambda_functions.lambda_handler
+      Runtime: python3.9
+      Role:
+        Fn::GetAtt:
+        - IamRole
+        - Arn
+    Metadata:
+      SamResourceId: LambdaFunction
